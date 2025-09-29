@@ -18,6 +18,9 @@ Egy átfogó személyes pénzügyi menedzsment alkalmazás, amely Next.js 15, Ty
 - **Tranzakció törlése**: Egyedi vagy több tranzakció eltávolítása
 - **Tranzakció típusok**: Egyszeri, ismétlődő és idővonal-alapú tranzakciók támogatása
 - **Kategóriák és alkategóriák**: Tranzakciók rendszerezése egyedi kategóriákkal
+- **Szerkeszthető kategóriák**: Egyedi kategóriák szerkesztése és törlése toll és kuka ikonokkal
+- **Kategória kezelés**: Kategóriák és alkategóriák hozzáadása, szerkesztése és törlése
+- **Tranzakció frissítések**: Meglévő tranzakciók automatikus frissítése kategória átnevezéskor
 
 ### 📊 Adatvizualizáció
 - **Interaktív diagramok**: Bevétel vs kiadás vizuális ábrázolása időben
@@ -27,7 +30,7 @@ Egy átfogó személyes pénzügyi menedzsment alkalmazás, amely Next.js 15, Ty
 ### 🔍 Fejlett szűrés és keresés
 - **Többkritériumos szűrés**: Szűrés tranzakció típus, kategória és dátumtartomány szerint
 - **Szöveges keresés**: Tranzakciók keresése cím és leírás kulcsszavak alapján
-- **Egyedi kategóriák**: Felhasználó által létrehozott kategóriák dinamikus betöltése
+- **Egyedi kategóriák**: Felhasználó által létrehozott kategóriák dinamikus betöltése teljes CRUD műveletekkel
 - **Tömeges műveletek**: Több tranzakció kiválasztása és egyidejű kezelése
 
 ### 📋 Adatkezelés
@@ -189,8 +192,12 @@ CREATE TABLE custom_subcategories (
 ### Kategóriák
 - `GET /api/categories` - Egyedi kategóriák lekérése
 - `POST /api/categories` - Egyedi kategória hozzáadása
+- `PUT /api/categories` - Kategória nevének frissítése
+- `DELETE /api/categories` - Egyedi kategória törlése
 - `GET /api/subcategories` - Alkategóriák lekérése
 - `POST /api/subcategories` - Alkategória hozzáadása
+- `PUT /api/subcategories` - Alkategória nevének frissítése
+- `DELETE /api/subcategories` - Alkategória törlése
 
 ## Kezdés
 
@@ -406,14 +413,6 @@ main-project/
 - **Lazy Loading**: Komponensek igény szerinti betöltése
 - **Reszponzív dizájn**: Különböző képernyőméretekre optimalizálva
 - **Gyorsítótárazás**: Gyakran elért adatok stratégiai gyorsítótárazása
-
-## Közreműködés
-
-1. Fork-olja a repository-t
-2. Hozzon létre egy feature branch-et (`git checkout -b feature/amazing-feature`)
-3. Commit-olja a változásokat (`git commit -m 'Add some amazing feature'`)
-4. Push-olja a branch-et (`git push origin feature/amazing-feature`)
-5. Nyisson egy Pull Request-et
 
 ---
 
