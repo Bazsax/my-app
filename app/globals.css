@@ -172,3 +172,7 @@
 h2 {
   @apply text-2xl; 
 }
+
+.gradient-orange-background {
+  background: linear-gradient(45deg, rgba(247, 122, 27, 0.2), rgba(54, 53, 52, 0.001)), var(--card);
+}

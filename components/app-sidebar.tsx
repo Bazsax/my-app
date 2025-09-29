@@ -83,21 +83,21 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "History",
+          title: "Előzmények",
           url: "#",
         },
         {
-          title: "Starred",
+          title: "Kedvencek",
           url: "#",
         },
         {
-          title: "Settings",
+          title: "Beállítások",
           url: "#",
         },
       ],
     },
     {
-      title: "Models",
+      title: "Modellek",
       url: "#",
       icon: Bot,
       items: [
@@ -116,47 +116,47 @@ const data = {
       ],
     },
     {
-      title: "Documentation",
+      title: "Dokumentáció",
       url: "#",
       icon: BookOpen,
       items: [
         {
-          title: "Introduction",
+          title: "Bevezetés",
           url: "#",
         },
         {
-          title: "Get Started",
+          title: "Kezdés",
           url: "#",
         },
         {
-          title: "Tutorials",
+          title: "Oktatóanyagok",
           url: "#",
         },
         {
-          title: "Changelog",
+          title: "Változások",
           url: "#",
         },
       ],
     },
     {
-      title: "Settings",
+      title: "Beállítások",
       url: "#",
       icon: Settings2,
       items: [
         {
-          title: "General",
+          title: "Általános",
           url: "#",
         },
         {
-          title: "Team",
+          title: "Csapat",
           url: "#",
         },
         {
-          title: "Billing",
+          title: "Számlázás",
           url: "#",
         },
         {
-          title: "Limits",
+          title: "Korlátok",
           url: "#",
         },
       ],
