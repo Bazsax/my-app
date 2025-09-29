@@ -121,3 +121,125 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('auth_token')?.value
+    
+    if (!token) {
+      return NextResponse.json(
+        { message: 'No token provided' },
+        { status: 401 }
+      )
+    }
+
+    // Verify the token and get user info
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, JWT_SECRET)
+    } catch (error) {
+      return NextResponse.json(
+        { message: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    const { oldName, newName, type } = await request.json()
+
+    if (!oldName || !newName || !type || (type !== 'income' && type !== 'expense')) {
+      return NextResponse.json(
+        { message: 'Old name, new name, and type are required' },
+        { status: 400 }
+      )
+    }
+
+    // Update custom category name
+    await query(
+      'UPDATE custom_categories SET name = ? WHERE user_id = ? AND name = ? AND type = ?',
+      [newName, decoded.userId, oldName, type]
+    )
+
+    // Also update all subcategories for this category
+    await query(
+      'UPDATE custom_subcategories SET category_name = ? WHERE user_id = ? AND category_name = ? AND type = ?',
+      [newName, decoded.userId, oldName, type]
+    )
+
+    // Update all transactions that use this category
+    await query(
+      'UPDATE cost_entries SET category = ? WHERE user_id = ? AND category = ? AND type = ?',
+      [newName, decoded.userId, oldName, type]
+    )
+
+    return NextResponse.json({
+      message: 'Custom category updated successfully'
+    })
+
+  } catch (error) {
+    console.error('Error updating custom category:', error)
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '') || request.cookies.get('auth_token')?.value
+    
+    if (!token) {
+      return NextResponse.json(
+        { message: 'No token provided' },
+        { status: 401 }
+      )
+    }
+
+    // Verify the token and get user info
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, JWT_SECRET)
+    } catch (error) {
+      return NextResponse.json(
+        { message: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const name = searchParams.get('name')
+    const type = searchParams.get('type')
+
+    if (!name || !type || (type !== 'income' && type !== 'expense')) {
+      return NextResponse.json(
+        { message: 'Name and type are required' },
+        { status: 400 }
+      )
+    }
+
+    // Delete custom category and all its subcategories
+    await query(
+      'DELETE FROM custom_categories WHERE user_id = ? AND name = ? AND type = ?',
+      [decoded.userId, name, type]
+    )
+
+    // Also delete all subcategories for this category
+    await query(
+      'DELETE FROM custom_subcategories WHERE user_id = ? AND category_name = ? AND type = ?',
+      [decoded.userId, name, type]
+    )
+
+    return NextResponse.json({
+      message: 'Custom category deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Error deleting custom category:', error)
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

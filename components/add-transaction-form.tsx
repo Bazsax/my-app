@@ -26,6 +26,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Trash2, Pen, Save, X, CheckIcon } from "lucide-react"
+import * as SelectPrimitive from "@radix-ui/react-select"
 
 interface AddTransactionFormProps {
   type: 'expense' | 'income'
@@ -58,6 +60,14 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
   const [newSubcategory, setNewSubcategory] = useState("")
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [showAddSubcategory, setShowAddSubcategory] = useState(false)
+  
+  // State for editing categories
+  const [editingCategory, setEditingCategory] = useState<string | null>(null)
+  const [editCategoryName, setEditCategoryName] = useState("")
+  
+  // State for editing subcategories
+  const [editingSubcategory, setEditingSubcategory] = useState<{category: string, subcategory: string} | null>(null)
+  const [editSubcategoryName, setEditSubcategoryName] = useState("")
 
   // Combined categories (predefined + custom)
   const incomeCategories = [...predefinedIncomeCategories, ...customCategories.map(cat => ({ value: cat, label: cat }))]
@@ -108,37 +118,48 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
   }, [isOpen])
 
   // Load custom categories
-  useEffect(() => {
-    const loadCustomCategories = async () => {
-      try {
-        const token = localStorage.getItem('auth_token')
-        if (!token) return
+  const loadCustomCategories = async () => {
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) return
 
-        const response = await fetch(`/api/categories?type=${type}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
+      const response = await fetch(`/api/categories?type=${type}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
 
-        if (response.ok) {
-          const data = await response.json()
+      if (response.ok) {
+        const data = await response.json()
+        
+        if (type === 'income') {
           setCustomCategories(data.customCategories || [])
-          
-          // Convert subcategories array to object
+        } else {
+          // For expense, add custom categories to customSubcategories object
           const subcatObj: {[key: string]: string[]} = {}
+          
+          // Add custom categories as empty subcategory objects
+          data.customCategories?.forEach((categoryName: string) => {
+            subcatObj[categoryName] = []
+          })
+          
+          // Add existing subcategories
           data.customSubcategories?.forEach((item: any) => {
             if (!subcatObj[item.category_name]) {
               subcatObj[item.category_name] = []
             }
             subcatObj[item.category_name].push(item.subcategory_name)
           })
+          
           setCustomSubcategories(subcatObj)
         }
-      } catch (error) {
-        console.error('Error loading custom categories:', error)
       }
+    } catch (error) {
+      console.error('Error loading custom categories:', error)
     }
+  }
 
+  useEffect(() => {
     loadCustomCategories()
   }, [type])
 
@@ -170,7 +191,18 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
 
       if (response.ok) {
         const categoryName = newCategory.trim()
-        setCustomCategories(prev => [...prev, categoryName])
+        
+        if (type === 'income') {
+          // For income, add to customCategories array
+          setCustomCategories(prev => [...prev, categoryName])
+        } else {
+          // For expense, add to customSubcategories object as a new category with empty subcategories
+          setCustomSubcategories(prev => ({
+            ...prev,
+            [categoryName]: []
+          }))
+        }
+        
         setFormData(prev => ({ ...prev, category: categoryName }))
         setNewCategory("")
         setShowAddCategory(false)
@@ -213,6 +245,200 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
     } catch (error) {
       console.error('Error adding subcategory:', error)
     }
+  }
+
+  const handleDeleteCategory = async (categoryName: string) => {
+    if (!confirm(`Biztosan törölni szeretné a "${categoryName}" kategóriát? Ez a művelet nem vonható vissza.`)) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) return
+
+      const response = await fetch(`/api/categories?name=${encodeURIComponent(categoryName)}&type=${type}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        if (type === 'income') {
+          setCustomCategories(prev => prev.filter(cat => cat !== categoryName))
+        } else {
+          setCustomSubcategories(prev => {
+            const newSubcategories = { ...prev }
+            delete newSubcategories[categoryName]
+            return newSubcategories
+          })
+        }
+        
+        // If the deleted category was selected, reset to default
+        if (formData.category === categoryName) {
+          setFormData(prev => ({ 
+            ...prev, 
+            category: type === 'expense' ? 'Vásárlások' : 'Fizetés',
+            subcategory: ""
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      alert('Hálózati hiba történt a kategória törlése során.')
+    }
+  }
+
+  const handleDeleteSubcategory = async (categoryName: string, subcategoryName: string) => {
+    if (!confirm(`Biztosan törölni szeretné a "${subcategoryName}" alkategóriát? Ez a művelet nem vonható vissza.`)) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) return
+
+      const response = await fetch(`/api/subcategories?categoryName=${encodeURIComponent(categoryName)}&subcategoryName=${encodeURIComponent(subcategoryName)}&type=${type}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        setCustomSubcategories(prev => ({
+          ...prev,
+          [categoryName]: prev[categoryName]?.filter(sub => sub !== subcategoryName) || []
+        }))
+        
+        // If the deleted subcategory was selected, clear it
+        if (formData.subcategory === subcategoryName) {
+          setFormData(prev => ({ ...prev, subcategory: "" }))
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting subcategory:', error)
+    }
+  }
+
+  const handleEditCategory = (categoryName: string) => {
+    setEditingCategory(categoryName)
+    setEditCategoryName(categoryName)
+  }
+
+  const handleSaveCategory = async () => {
+    if (!editingCategory || !editCategoryName.trim()) return
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) return
+
+      const response = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          oldName: editingCategory,
+          newName: editCategoryName.trim(),
+          type: type
+        })
+      })
+
+      if (response.ok) {
+        if (type === 'income') {
+          setCustomCategories(prev => prev.map(cat => cat === editingCategory ? editCategoryName.trim() : cat))
+        } else {
+          setCustomSubcategories(prev => {
+            const newSubcategories = { ...prev }
+            if (newSubcategories[editingCategory]) {
+              newSubcategories[editCategoryName.trim()] = newSubcategories[editingCategory]
+              delete newSubcategories[editingCategory]
+            }
+            return newSubcategories
+          })
+        }
+        
+        // If the edited category was selected, update it
+        if (formData.category === editingCategory) {
+          setFormData(prev => ({ ...prev, category: editCategoryName.trim() }))
+        }
+        
+        setEditingCategory(null)
+        setEditCategoryName("")
+        
+        // Refresh transaction table to show updated category names
+        onSuccess?.()
+      }
+    } catch (error) {
+      console.error('Error updating category:', error)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null)
+    setEditCategoryName("")
+  }
+
+  const handleEditSubcategory = (category: string, subcategory: string) => {
+    setEditingSubcategory({ category, subcategory })
+    setEditSubcategoryName(subcategory)
+  }
+
+  const handleSaveSubcategory = async () => {
+    if (!editingSubcategory || !editSubcategoryName.trim()) return
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) return
+
+      const response = await fetch('/api/subcategories', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          categoryName: editingSubcategory.category,
+          oldSubcategoryName: editingSubcategory.subcategory,
+          newSubcategoryName: editSubcategoryName.trim(),
+          type: type
+        })
+      })
+
+      if (response.ok) {
+        // Update local state
+        setCustomSubcategories(prev => {
+          const newSubcategories = { ...prev }
+          if (newSubcategories[editingSubcategory.category]) {
+            const index = newSubcategories[editingSubcategory.category].indexOf(editingSubcategory.subcategory)
+            if (index !== -1) {
+              newSubcategories[editingSubcategory.category][index] = editSubcategoryName.trim()
+            }
+          }
+          return newSubcategories
+        })
+        
+        // If the edited subcategory was selected, update it
+        if (formData.subcategory === editingSubcategory.subcategory) {
+          setFormData(prev => ({ ...prev, subcategory: editSubcategoryName.trim() }))
+        }
+        
+        setEditingSubcategory(null)
+        setEditSubcategoryName("")
+        
+        // Refresh transaction table to show updated subcategory names
+        onSuccess?.()
+      }
+    } catch (error) {
+      console.error('Error updating subcategory:', error)
+    }
+  }
+
+  const handleCancelEditSubcategory = () => {
+    setEditingSubcategory(null)
+    setEditSubcategoryName("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -291,6 +517,8 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
           frequency: "monthly",
           time: ""
         })
+        // Reload custom categories to ensure they persist
+        loadCustomCategories()
         onSuccess?.()
         setTimeout(() => {
           setIsOpen(false)
@@ -449,17 +677,150 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
               </SelectTrigger>
               <SelectContent>
                 {type === 'income' ? (
-                  incomeCategories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))
+                  incomeCategories.map((cat) => {
+                    const isCustom = customCategories.includes(cat.value)
+                    const isEditing = editingCategory === cat.value
+                    return (
+                      <div key={cat.value} className="relative">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1 p-2">
+                            <Input
+                              value={editCategoryName}
+                              onChange={(e) => setEditCategoryName(e.target.value)}
+                              className="flex-1 h-8 text-sm"
+                              onKeyPress={(e) => e.key === 'Enter' && handleSaveCategory()}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleSaveCategory()
+                              }}
+                              className="p-1 hover:bg-muted rounded"
+                              title="Mentés"
+                            >
+                              <Save className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleCancelEdit()
+                              }}
+                              className="p-1 hover:bg-muted rounded"
+                              title="Mégse"
+                            >
+                              <X className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteCategory(cat.value)
+                              }}
+                              className="p-1 hover:bg-muted rounded"
+                              title="Kategória törlése"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <SelectItem value={cat.value}>
+                              {cat.label}
+                            </SelectItem>
+                            {isCustom && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditCategory(cat.value)
+                                }}
+                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10"
+                                title="Kategória szerkesztése"
+                              >
+                                <Pen className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })
                 ) : (
-                  allExpenseCategories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))
+                  allExpenseCategories.map((cat) => {
+                    const isPredefined = Object.keys(predefinedExpenseCategories).includes(cat)
+                    const isCustom = Object.keys(customSubcategories).includes(cat) && !isPredefined
+                    const isEditing = editingCategory === cat
+                    return (
+                      <div key={cat} className="relative">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1 p-2">
+                            <Input
+                              value={editCategoryName}
+                              onChange={(e) => setEditCategoryName(e.target.value)}
+                              className="flex-1 h-8 text-sm"
+                              onKeyPress={(e) => e.key === 'Enter' && handleSaveCategory()}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleSaveCategory()
+                              }}
+                              className="p-1 hover:bg-muted rounded"
+                              title="Mentés"
+                            >
+                              <Save className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleCancelEdit()
+                              }}
+                              className="p-1 hover:bg-muted rounded"
+                              title="Mégse"
+                            >
+                              <X className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteCategory(cat)
+                              }}
+                              className="p-1 hover:bg-muted rounded"
+                              title="Kategória törlése"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <SelectItem value={cat}>
+                              {cat}
+                            </SelectItem>
+                            {isCustom && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditCategory(cat)
+                                }}
+                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10"
+                                title="Kategória szerkesztése"
+                              >
+                                <Pen className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })
                 )}
               </SelectContent>
             </Select>
@@ -497,7 +858,7 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
           </div>
 
           {/* Subcategory for expenses (except Vásárlások) */}
-          {type === 'expense' && formData.category && formData.category !== 'Vásárlások' && expenseCategories[formData.category as keyof typeof expenseCategories]?.length > 0 && (
+          {type === 'expense' && formData.category && formData.category !== 'Vásárlások' && (
             <div>
               <Label htmlFor="subcategory">Alkategória</Label>
               <Select
@@ -508,11 +869,49 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
                   <SelectValue placeholder="Válassza ki az alkategóriát" />
                 </SelectTrigger>
                 <SelectContent>
-                  {expenseCategories[formData.category as keyof typeof expenseCategories]?.map((subcat) => (
-                    <SelectItem key={subcat} value={subcat}>
-                      {subcat}
-                    </SelectItem>
-                  ))}
+                  {expenseCategories[formData.category as keyof typeof expenseCategories]?.map((subcat) => {
+                    const predefinedSubcats = predefinedExpenseCategories[formData.category as keyof typeof predefinedExpenseCategories] as string[] || []
+                    const isPredefined = predefinedSubcats.includes(subcat)
+                    const isCustom = !isPredefined
+                    const isEditing = editingSubcategory?.category === formData.category && editingSubcategory?.subcategory === subcat
+                    
+                    return (
+                      <div key={subcat} className="relative">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1 p-2">
+                            <Input
+                              value={editSubcategoryName}
+                              onChange={(e) => setEditSubcategoryName(e.target.value)}
+                              className="flex-1"
+                              autoFocus
+                            />
+                            <button onClick={handleSaveSubcategory} title="Mentés" className="p-1 hover:bg-muted rounded"><Save className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                            <button onClick={handleCancelEditSubcategory} title="Mégse" className="p-1 hover:bg-muted rounded"><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                            <button onClick={() => handleDeleteSubcategory(formData.category, subcat)} title="Alkategória törlése" className="p-1 hover:bg-muted rounded"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                          </div>
+                        ) : (
+                          <>
+                            <SelectItem value={subcat}>
+                              {subcat}
+                            </SelectItem>
+                            {isCustom && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditSubcategory(formData.category, subcat)
+                                }}
+                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10"
+                                title="Alkategória szerkesztése"
+                              >
+                                <Pen className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
                 </SelectContent>
               </Select>
               

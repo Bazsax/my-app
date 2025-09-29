@@ -189,7 +189,7 @@ export function EditTransactionForm({ type, onSuccess }: EditTransactionFormProp
         const token = localStorage.getItem('auth_token')
         if (!token) return
 
-        const response = await fetch('/api/categories', {
+        const response = await fetch(`/api/categories?type=${type}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

@@ -407,14 +407,6 @@ main-project/
 - **Reszponzív dizájn**: Különböző képernyőméretekre optimalizálva
 - **Gyorsítótárazás**: Gyakran elért adatok stratégiai gyorsítótárazása
 
-## Közreműködés
-
-1. Fork-olja a repository-t
-2. Hozzon létre egy feature branch-et (`git checkout -b feature/amazing-feature`)
-3. Commit-olja a változásokat (`git commit -m 'Add some amazing feature'`)
-4. Push-olja a branch-et (`git push origin feature/amazing-feature`)
-5. Nyisson egy Pull Request-et
-
 ---
 
 **Verzió**: 0.1.0  

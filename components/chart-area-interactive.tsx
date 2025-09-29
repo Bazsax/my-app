@@ -235,7 +235,7 @@ export function ChartAreaInteractive({ date, refreshKey }: { date?: DateRange | 
                         })
                       }}
                       formatter={(value, name) => [
-                        <span style={{ color: name === "Bevétel" ? "#22c55e" : "#ef4444" }}>
+                        <span key="value" style={{ color: name === "Bevétel" ? "#22c55e" : "#ef4444" }}>
                           {formatCurrency(Number(value))}
                         </span>,
                         name === "Bevétel" ? "Bevétel" : "Kiadás"
