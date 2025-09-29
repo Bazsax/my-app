@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { DateRange } from "react-day-picker"
 import { format } from "date-fns"
 import { hu } from "date-fns/locale"
@@ -119,12 +119,7 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
   
   const [selectAllChecked, setSelectAllChecked] = useState(false)
   
-  // Combined categories
-  const incomeCategories = [...PREDEFINED_INCOME_CATEGORIES, ...customIncomeCategories]
-  const expenseCategories = [...PREDEFINED_EXPENSE_CATEGORIES, ...customExpenseCategories]
-  const allCategories = [...incomeCategories, ...expenseCategories].sort()
-
-  const fetchCustomCategories = async () => {
+  const fetchCustomCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem('auth_token')
       if (!token) return
@@ -155,7 +150,23 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
     } catch (error) {
       console.error('Error fetching custom categories:', error)
     }
-  }
+  }, [])
+
+  const categoryFilterOptions = useMemo(() => {
+    const categories = new Set<string>()
+
+    PREDEFINED_INCOME_CATEGORIES.forEach(category => categories.add(category))
+    PREDEFINED_EXPENSE_CATEGORIES.forEach(category => categories.add(category))
+    customIncomeCategories.forEach(category => categories.add(category))
+    customExpenseCategories.forEach(category => categories.add(category))
+    transactions.forEach(transaction => {
+      if (transaction.category) {
+        categories.add(transaction.category)
+      }
+    })
+
+    return Array.from(categories).sort((a, b) => a.localeCompare(b, 'hu'))
+  }, [customExpenseCategories, customIncomeCategories, transactions])
 
   const fetchTransactions = async () => {
     setIsLoading(true)
@@ -209,7 +220,7 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
 
   useEffect(() => {
     fetchCustomCategories()
-  }, [])
+  }, [fetchCustomCategories])
 
   useEffect(() => {
     fetchTransactions()
@@ -502,8 +513,8 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
               </div>
             ) : (
               (() => {
-                const isCustomCategory = transaction.category && 
-                  !PREDEFINED_INCOME_CATEGORIES.includes(transaction.category) && 
+                const isCustomCategory = transaction.category &&
+                  !PREDEFINED_INCOME_CATEGORIES.includes(transaction.category) &&
                   !PREDEFINED_EXPENSE_CATEGORIES.includes(transaction.category)
                 
                 return (
@@ -1311,13 +1322,13 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Kategória" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Összes kategória</SelectItem>
-              {allCategories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
+          <SelectContent>
+            <SelectItem value="all">Összes kategória</SelectItem>
+            {categoryFilterOptions.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category}
+              </SelectItem>
+            ))}
             </SelectContent>
           </Select>
 
