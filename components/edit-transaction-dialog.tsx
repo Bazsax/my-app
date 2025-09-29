@@ -61,9 +61,9 @@ export function EditTransactionDialog({
   
   const predefinedExpenseCategories = {
     'Vásárlások': [],
-    'Számlák': ['bérleti díj', 'telefon', 'közlekedés', 'háztartási számlák'],
-    'Hiteltörlesztések': ['Lakás', 'autó', 'tanulmány'],
-    'Szórakozás': ['Éttermek', 'bulik', 'jegyek', 'impulzus vásárlások']
+    'Számlák': ['Bérleti díj', 'Telefon számla', 'Közlekedési számla', 'Háztartási számla'],
+    'Hiteltörlesztések': ['Lakás', 'Autó', 'Tanulmány'],
+    'Szórakozás': ['Étterem', 'Buli', 'Jegy', 'Impulzus vásárlás']
   }
   
   // Custom categories state
@@ -119,16 +119,55 @@ export function EditTransactionDialog({
         const token = localStorage.getItem('auth_token')
         if (!token) return
 
-        const response = await fetch('/api/categories', {
+        // Load income categories
+        const incomeResponse = await fetch('/api/categories?type=income', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
 
-        if (response.ok) {
-          const data = await response.json()
-          setCustomCategories(data.categories || [])
-          setCustomSubcategories(data.subcategories || {})
+        // Load expense categories
+        const expenseResponse = await fetch('/api/categories?type=expense', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (incomeResponse.ok && expenseResponse.ok) {
+          const incomeData = await incomeResponse.json()
+          const expenseData = await expenseResponse.json()
+          
+          // Combine income and expense categories
+          const allCustomCategories = [
+            ...(incomeData.customCategories || []),
+            ...(expenseData.customCategories || [])
+          ]
+          
+          // Combine subcategories
+          const allCustomSubcategories: {[key: string]: string[]} = {}
+          
+          // Process income subcategories
+          if (incomeData.customSubcategories) {
+            incomeData.customSubcategories.forEach((item: any) => {
+              if (!allCustomSubcategories[item.category_name]) {
+                allCustomSubcategories[item.category_name] = []
+              }
+              allCustomSubcategories[item.category_name].push(item.subcategory_name)
+            })
+          }
+          
+          // Process expense subcategories
+          if (expenseData.customSubcategories) {
+            expenseData.customSubcategories.forEach((item: any) => {
+              if (!allCustomSubcategories[item.category_name]) {
+                allCustomSubcategories[item.category_name] = []
+              }
+              allCustomSubcategories[item.category_name].push(item.subcategory_name)
+            })
+          }
+          
+          setCustomCategories(allCustomCategories)
+          setCustomSubcategories(allCustomSubcategories)
         }
       } catch (error) {
         console.error('Error loading custom categories:', error)
@@ -318,7 +357,7 @@ export function EditTransactionDialog({
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="title" className="text-right">
-                Név
+                Név *
               </Label>
               <Input
                 id="title"
@@ -344,7 +383,7 @@ export function EditTransactionDialog({
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="amount" className="text-right">
-                Összeg
+                Összeg *
               </Label>
               <Input
                 id="amount"
@@ -360,7 +399,7 @@ export function EditTransactionDialog({
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="type" className="text-right">
-                Típus
+                Típus *
               </Label>
               <Select
                 value={formData.type}
@@ -377,7 +416,7 @@ export function EditTransactionDialog({
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="transactionType" className="text-right">
-              Tranzakció
+              Tranzakció *
               </Label>
               <Select
                 value={formData.transactionType}
@@ -395,7 +434,7 @@ export function EditTransactionDialog({
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="category" className="text-right">
-                Kategória
+                Kategória *
               </Label>
               <div className="col-span-3 space-y-2">
                 <Select
@@ -579,7 +618,7 @@ export function EditTransactionDialog({
             )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="date" className="text-right">
-                Jegyzés dátuma
+                Jegyzés dátuma *
               </Label>
               <Input
                 id="date"

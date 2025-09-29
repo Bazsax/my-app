@@ -18,6 +18,12 @@ A comprehensive personal finance management application built with Next.js 15, T
 - **Delete Transactions**: Remove individual or multiple transactions
 - **Transaction Types**: Support for one-time, recurring, and timeline-based transactions
 - **Categories & Subcategories**: Organize transactions with custom categories
+- **Editable Categories**: Edit and delete custom categories with pen and trash icons
+- **Category Management**: Add, edit, and delete both categories and subcategories
+- **Transaction Updates**: Automatically update existing transactions when categories are renamed
+- **Inline Editing**: Double-click to edit category and subcategory names directly in the transaction table
+- **Visual Indicators**: Lock icons show predefined (locked) vs custom (unlocked) categories
+- **Mobile-Friendly Editing**: Save/Cancel buttons for mobile devices with touch-friendly interface
 
 ### 📊 Data Visualization
 - **Interactive Charts**: Visual representation of income vs expenses over time
@@ -27,13 +33,16 @@ A comprehensive personal finance management application built with Next.js 15, T
 ### 🔍 Advanced Filtering & Search
 - **Multi-criteria Filtering**: Filter by transaction type, category, and date range
 - **Text Search**: Search transactions by title and description keywords
-- **Custom Categories**: Dynamically load user-created categories
+- **Custom Categories**: Dynamically load user-created categories with full CRUD operations
 - **Bulk Operations**: Select and manage multiple transactions simultaneously
+- **Refresh Functionality**: Manual refresh button to update transaction data
 
 ### 📋 Data Management
 - **Column Customization**: Show/hide table columns based on user preferences
 - **CSV Export**: Export filtered or selected transactions to CSV format
 - **Responsive Design**: Optimized for both desktop and mobile devices
+- **Mobile Layout**: Stacked button layout with wrapping for mobile screens
+- **Touch-Friendly Interface**: Optimized buttons and interactions for mobile devices
 
 ## Technology Stack
 
@@ -189,8 +198,12 @@ CREATE TABLE custom_subcategories (
 ### Categories
 - `GET /api/categories` - Get custom categories
 - `POST /api/categories` - Add custom category
+- `PUT /api/categories` - Update category name
+- `DELETE /api/categories` - Delete custom category
 - `GET /api/subcategories` - Get subcategories
 - `POST /api/subcategories` - Add subcategory
+- `PUT /api/subcategories` - Update subcategory name
+- `DELETE /api/subcategories` - Delete subcategory
 
 ## Getting Started
 
@@ -299,7 +312,7 @@ npm run dev
    ```
 
 3. **Set up environment variables**
-   Create a `.env.local` file:
+   Create a `.env.local` file (if this repo does not contain it):
    ```env
    JWT_SECRET=your-secret-key-change-this-in-production
    DB_HOST=localhost
@@ -308,12 +321,8 @@ npm run dev
    DB_NAME=cost_tracker
    ```
 
-4. **Set up the database**
-   ```bash
-   # Create database and run migrations
-   mysql -u your-username -p < database-schema.sql
-   mysql -u your-username -p < database-migration.sql
-   ```
+4. ### **Set up the database**
+   For the database use the SQL code displayed in this documentation
 
 5. **Run the development server**
    ```bash
@@ -406,14 +415,6 @@ main-project/
 - **Lazy Loading**: Components loaded as needed
 - **Responsive Design**: Optimized for various screen sizes
 - **Caching**: Strategic caching of frequently accessed data
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ---
 

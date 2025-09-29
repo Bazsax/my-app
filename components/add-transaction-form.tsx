@@ -48,9 +48,9 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
   
   const predefinedExpenseCategories = {
     'Vásárlások': [],
-    'Számlák': ['bérleti díj', 'telefon', 'közlekedés', 'háztartási számlák'],
-    'Hiteltörlesztések': ['Lakás', 'autó', 'tanulmány'],
-    'Szórakozás': ['Éttermek', 'bulik', 'jegyek', 'impulzus vásárlások']
+    'Számlák': ['Bérleti díj', 'Telefon számla', 'Közlekedési számla', 'Háztartási számla'],
+    'Hiteltörlesztések': ['Lakás', 'Autó', 'Tanulmány'],
+    'Szórakozás': ['Étterem', 'Buli', 'Jegy', 'Impulzus vásárlás']
   }
 
   // State for custom categories
@@ -367,9 +367,6 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
         
         setEditingCategory(null)
         setEditCategoryName("")
-        
-        // Refresh transaction table to show updated category names
-        onSuccess?.()
       }
     } catch (error) {
       console.error('Error updating category:', error)
@@ -427,9 +424,6 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
         
         setEditingSubcategory(null)
         setEditSubcategoryName("")
-        
-        // Refresh transaction table to show updated subcategory names
-        onSuccess?.()
       }
     } catch (error) {
       console.error('Error updating subcategory:', error)
@@ -660,7 +654,7 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
 
           {/* Category Selection */}
           <div>
-            <Label htmlFor="category">Kategória</Label>
+            <Label htmlFor="category">Kategória *</Label>
             <Select
               value={formData.category}
               onValueChange={(value) => {
@@ -737,7 +731,7 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
                                   e.stopPropagation()
                                   handleEditCategory(cat.value)
                                 }}
-                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10"
+                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10 cursor-pointer"
                                 title="Kategória szerkesztése"
                               >
                                 <Pen className="h-3.5 w-3.5 text-muted-foreground" />
@@ -810,7 +804,7 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
                                   e.stopPropagation()
                                   handleEditCategory(cat)
                                 }}
-                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10"
+                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10 cursor-pointer"
                                 title="Kategória szerkesztése"
                               >
                                 <Pen className="h-3.5 w-3.5 text-muted-foreground" />
@@ -885,9 +879,9 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
                               className="flex-1"
                               autoFocus
                             />
-                            <button onClick={handleSaveSubcategory} title="Mentés" className="p-1 hover:bg-muted rounded"><Save className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                            <button onClick={handleCancelEditSubcategory} title="Mégse" className="p-1 hover:bg-muted rounded"><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                            <button onClick={() => handleDeleteSubcategory(formData.category, subcat)} title="Alkategória törlése" className="p-1 hover:bg-muted rounded"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                            <button onClick={handleSaveSubcategory} title="Mentés" className="p-1 hover:bg-muted rounded cursor-pointer"><Save className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                            <button onClick={handleCancelEditSubcategory} title="Mégse" className="p-1 hover:bg-muted rounded cursor-pointer"><X className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                            <button onClick={() => handleDeleteSubcategory(formData.category, subcat)} title="Alkategória törlése" className="p-1 hover:bg-muted rounded cursor-pointer"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></button>
                           </div>
                         ) : (
                           <>
@@ -901,7 +895,7 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
                                   e.stopPropagation()
                                   handleEditSubcategory(formData.category, subcat)
                                 }}
-                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10"
+                                className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded z-10 cursor-pointer"
                                 title="Alkategória szerkesztése"
                               >
                                 <Pen className="h-3.5 w-3.5 text-muted-foreground" />
@@ -978,7 +972,7 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
           </div>
 
           <div>
-            <Label htmlFor="description">Leírás</Label>
+            <Label htmlFor="description">Leírás (opcionális)</Label>
             <Input
               id="description"
               name="description"

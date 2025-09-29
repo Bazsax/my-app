@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { DateRange } from "react-day-picker"
 import { format } from "date-fns"
 import { hu } from "date-fns/locale"
-import { IconEdit, IconTrash, IconColumns, IconFilter, IconDownload, IconSearch } from "@tabler/icons-react"
+import { IconEdit, IconTrash, IconColumns, IconFilter, IconDownload, IconSearch, IconRefresh, IconLock, IconLockOpen } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -106,6 +106,13 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
   
   // Bulk operations state
   const [selectedTransactions, setSelectedTransactions] = useState<Set<number>>(new Set())
+  
+  // Inline editing state
+  const [editingCategory, setEditingCategory] = useState<{transactionId: number, category: string} | null>(null)
+  const [editCategoryValue, setEditCategoryValue] = useState("")
+  const [editingSubcategory, setEditingSubcategory] = useState<{transactionId: number, subcategory: string} | null>(null)
+  const [editSubcategoryValue, setEditSubcategoryValue] = useState("")
+  
   const [selectAllChecked, setSelectAllChecked] = useState(false)
   
   // Combined categories
@@ -457,15 +464,125 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
           </TableCell>
         )
       case 'category':
+        const isEditing = editingCategory?.transactionId === transaction.id
         return (
           <TableCell key={columnKey}>
-            {transaction.category || '-'}
+            {isEditing ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editCategoryValue}
+                  onChange={(e) => setEditCategoryValue(e.target.value)}
+                  onKeyDown={handleCategoryKeyPress}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                  autoFocus
+                />
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCategorySave}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Mentés
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCategoryCancel}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Mégse
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              (() => {
+                const isCustomCategory = transaction.category && 
+                  !PREDEFINED_INCOME_CATEGORIES.includes(transaction.category) && 
+                  !PREDEFINED_EXPENSE_CATEGORIES.includes(transaction.category)
+                
+                return (
+                  <span
+                    onDoubleClick={() => handleCategoryDoubleClick(transaction.id, transaction.category || '')}
+                    className={`px-2 py-1 rounded flex items-center gap-1 ${
+                      isCustomCategory 
+                        ? 'cursor-pointer hover:bg-muted' 
+                        : 'cursor-default'
+                    }`}
+                    title={isCustomCategory ? "Dupla kattintás a szerkesztéshez" : "Előre definiált kategória - nem szerkeszthető"}
+                  >
+                    {isCustomCategory ? (
+                      <IconLockOpen className="h-3 w-3 text-muted-foreground" />
+                    ) : (
+                      <IconLock className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    {transaction.category || '-'}
+                  </span>
+                )
+              })()
+            )}
           </TableCell>
         )
       case 'subcategory':
+        const isEditingSubcategory = editingSubcategory?.transactionId === transaction.id
         return (
           <TableCell key={columnKey}>
-            {transaction.subcategory || '-'}
+            {isEditingSubcategory ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editSubcategoryValue}
+                  onChange={(e) => setEditSubcategoryValue(e.target.value)}
+                  onKeyDown={handleSubcategoryKeyPress}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                  autoFocus
+                />
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSubcategorySave}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Mentés
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSubcategoryCancel}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Mégse
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              (() => {
+                const isCustomSubcategory = transaction.subcategory && 
+                  !PREDEFINED_INCOME_CATEGORIES.includes(transaction.subcategory) && 
+                  !PREDEFINED_EXPENSE_CATEGORIES.includes(transaction.subcategory)
+                
+                return (
+                  <span
+                    onDoubleClick={() => handleSubcategoryDoubleClick(transaction.id, transaction.subcategory || '')}
+                    className={`px-2 py-1 rounded flex items-center gap-1 ${
+                      isCustomSubcategory 
+                        ? 'cursor-pointer hover:bg-muted' 
+                        : 'cursor-default'
+                    }`}
+                    title={isCustomSubcategory ? "Dupla kattintás a szerkesztéshez" : "Előre definiált alkategória - nem szerkeszthető"}
+                  >
+                    {isCustomSubcategory ? (
+                      <IconLockOpen className="h-3 w-3 text-muted-foreground" />
+                    ) : (
+                      <IconLock className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    {transaction.subcategory || '-'}
+                  </span>
+                )
+              })()
+            )}
           </TableCell>
         )
       case 'description':
@@ -540,6 +657,245 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
     setIsEditDialogOpen(false)
   }
 
+  // Inline category editing handlers
+  const handleCategoryDoubleClick = (transactionId: number, currentCategory: string) => {
+    // Check if the category is custom (not predefined)
+    const isCustomCategory = !PREDEFINED_INCOME_CATEGORIES.includes(currentCategory) && 
+                            !PREDEFINED_EXPENSE_CATEGORIES.includes(currentCategory)
+    
+    if (!isCustomCategory) {
+      toast.info('Csak egyedi kategóriák szerkeszthetők')
+      return
+    }
+    
+    setEditingCategory({ transactionId, category: currentCategory })
+    setEditCategoryValue(currentCategory)
+  }
+
+  const handleCategorySave = async () => {
+    console.log('handleCategorySave called', { editingCategory, editCategoryValue })
+    if (!editingCategory || !editCategoryValue.trim()) {
+      console.log('Early return: no editingCategory or empty value')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        console.log('No token found')
+        return
+      }
+
+      // Get the current transaction data
+      const currentTransaction = transactions.find(t => t.id === editingCategory.transactionId)
+      if (!currentTransaction) {
+        console.log('Current transaction not found')
+        return
+      }
+
+      // First, update the category name in the database
+      console.log('Making API call to update category name in database')
+      const categoryResponse = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          oldName: editingCategory.category,
+          newName: editCategoryValue.trim(),
+          type: currentTransaction.type
+        })
+      })
+
+      if (!categoryResponse.ok) {
+        const errorText = await categoryResponse.text()
+        console.log('Category API error response:', errorText)
+        toast.error('Nem sikerült a kategória nevének frissítése')
+        return
+      }
+
+      // Then update the transaction
+      console.log('Making API call to update transaction')
+      const transactionResponse = await fetch(`/api/transactions/${editingCategory.transactionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: currentTransaction.title,
+          amount: currentTransaction.amount,
+          description: currentTransaction.description,
+          category: editCategoryValue.trim(),
+          subcategory: currentTransaction.subcategory,
+          type: currentTransaction.type,
+          transactionType: currentTransaction.transaction_type,
+          date: currentTransaction.date,
+          time: currentTransaction.time
+        })
+      })
+
+      console.log('Transaction API response:', transactionResponse.status, transactionResponse.ok)
+      if (transactionResponse.ok) {
+        // Update local state
+        setTransactions(prev => prev.map(t => 
+          t.id === editingCategory.transactionId 
+            ? { ...t, category: editCategoryValue.trim() }
+            : t
+        ))
+        
+        setEditingCategory(null)
+        setEditCategoryValue("")
+        toast.success('Kategória frissítve')
+      } else {
+        const errorText = await transactionResponse.text()
+        console.log('Transaction API error response:', errorText)
+        toast.error('Nem sikerült a tranzakció frissítése')
+      }
+    } catch (error) {
+      console.error('Error updating category:', error)
+      toast.error('Hiba történt a kategória frissítése során')
+    }
+  }
+
+  const handleCategoryCancel = () => {
+    setEditingCategory(null)
+    setEditCategoryValue("")
+  }
+
+  const handleCategoryKeyPress = (e: React.KeyboardEvent) => {
+    console.log('Key pressed:', e.key)
+    if (e.key === 'Enter') {
+      console.log('Enter key pressed, calling handleCategorySave')
+      e.preventDefault()
+      handleCategorySave()
+    } else if (e.key === 'Escape') {
+      console.log('Escape key pressed, calling handleCategoryCancel')
+      handleCategoryCancel()
+    }
+  }
+
+  // Inline subcategory editing handlers
+  const handleSubcategoryDoubleClick = (transactionId: number, currentSubcategory: string) => {
+    // Check if the subcategory is custom (not predefined)
+    const isCustomSubcategory = !PREDEFINED_INCOME_CATEGORIES.includes(currentSubcategory) && 
+                               !PREDEFINED_EXPENSE_CATEGORIES.includes(currentSubcategory)
+    
+    if (!isCustomSubcategory) {
+      toast.info('Csak egyedi alkategóriák szerkeszthetők')
+      return
+    }
+    
+    setEditingSubcategory({ transactionId, subcategory: currentSubcategory })
+    setEditSubcategoryValue(currentSubcategory)
+  }
+
+  const handleSubcategorySave = async () => {
+    console.log('handleSubcategorySave called', { editingSubcategory, editSubcategoryValue })
+    if (!editingSubcategory || !editSubcategoryValue.trim()) {
+      console.log('Early return: no editingSubcategory or empty value')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        console.log('No token found')
+        return
+      }
+
+      // Get the current transaction data
+      const currentTransaction = transactions.find(t => t.id === editingSubcategory.transactionId)
+      if (!currentTransaction) {
+        console.log('Current transaction not found')
+        return
+      }
+
+      // First, update the subcategory name in the database
+      console.log('Making API call to update subcategory name in database')
+      const subcategoryResponse = await fetch('/api/subcategories', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          categoryName: currentTransaction.category,
+          oldSubcategoryName: editingSubcategory.subcategory,
+          newSubcategoryName: editSubcategoryValue.trim(),
+          type: currentTransaction.type
+        })
+      })
+
+      if (!subcategoryResponse.ok) {
+        const errorText = await subcategoryResponse.text()
+        console.log('Subcategory API error response:', errorText)
+        toast.error('Nem sikerült az alkategória nevének frissítése')
+        return
+      }
+
+      // Then update the transaction
+      console.log('Making API call to update transaction')
+      const transactionResponse = await fetch(`/api/transactions/${editingSubcategory.transactionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: currentTransaction.title,
+          amount: currentTransaction.amount,
+          description: currentTransaction.description,
+          category: currentTransaction.category,
+          subcategory: editSubcategoryValue.trim(),
+          type: currentTransaction.type,
+          transactionType: currentTransaction.transaction_type,
+          date: currentTransaction.date,
+          time: currentTransaction.time
+        })
+      })
+
+      console.log('Transaction API response:', transactionResponse.status, transactionResponse.ok)
+      if (transactionResponse.ok) {
+        // Update local state
+        setTransactions(prev => prev.map(t => 
+          t.id === editingSubcategory.transactionId 
+            ? { ...t, subcategory: editSubcategoryValue.trim() }
+            : t
+        ))
+        
+        setEditingSubcategory(null)
+        setEditSubcategoryValue("")
+        toast.success('Alkategória frissítve')
+      } else {
+        const errorText = await transactionResponse.text()
+        console.log('Transaction API error response:', errorText)
+        toast.error('Nem sikerült a tranzakció frissítése')
+      }
+    } catch (error) {
+      console.error('Error updating subcategory:', error)
+      toast.error('Hiba történt az alkategória frissítése során')
+    }
+  }
+
+  const handleSubcategoryCancel = () => {
+    setEditingSubcategory(null)
+    setEditSubcategoryValue("")
+  }
+
+  const handleSubcategoryKeyPress = (e: React.KeyboardEvent) => {
+    console.log('Subcategory key pressed:', e.key)
+    if (e.key === 'Enter') {
+      console.log('Enter key pressed, calling handleSubcategorySave')
+      e.preventDefault()
+      handleSubcategorySave()
+    } else if (e.key === 'Escape') {
+      console.log('Escape key pressed, calling handleSubcategoryCancel')
+      handleSubcategoryCancel()
+    }
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -575,7 +931,7 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
   return (
     <Card>
       <CardHeader className="px-3 py-2 lg:px-6 lg:py-3">
-        <div className="flex items-center justify-between">
+        <div className="space-y-3">
           <div>
             <CardTitle>Tranzakciók</CardTitle>
             <CardDescription>
@@ -587,7 +943,7 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
               )}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap gap-2">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -609,6 +965,16 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRefresh?.()}
+              title="Tranzakciók frissítése"
+            >
+              <IconRefresh className="h-4 w-4 mr-0.3" />
+              Frissítés
+            </Button>
+            
             {filteredTransactions.length > 0 && (
               <Button
                 variant="outline"

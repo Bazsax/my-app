@@ -18,6 +18,12 @@ Egy átfogó személyes pénzügyi menedzsment alkalmazás, amely Next.js 15, Ty
 - **Tranzakció törlése**: Egyedi vagy több tranzakció eltávolítása
 - **Tranzakció típusok**: Egyszeri, ismétlődő és idővonal-alapú tranzakciók támogatása
 - **Kategóriák és alkategóriák**: Tranzakciók rendszerezése egyedi kategóriákkal
+- **Szerkeszthető kategóriák**: Egyedi kategóriák szerkesztése és törlése toll és kuka ikonokkal
+- **Kategória kezelés**: Kategóriák és alkategóriák hozzáadása, szerkesztése és törlése
+- **Tranzakció frissítések**: Meglévő tranzakciók automatikus frissítése kategória átnevezéskor
+- **Beépített szerkesztés**: Dupla kattintással szerkeszthető kategória- és alkategórianév közvetlenül a tranzakció táblázatban
+- **Vizuális jelzők**: Zár ikonok mutatják az előre definiált (zárt) és egyedi (nyitott) kategóriákat
+- **Mobilbarát szerkesztés**: Mentés/Mégse gombok mobil eszközökhöz érintésbarát felülettel
 
 ### 📊 Adatvizualizáció
 - **Interaktív diagramok**: Bevétel vs kiadás vizuális ábrázolása időben
@@ -27,13 +33,16 @@ Egy átfogó személyes pénzügyi menedzsment alkalmazás, amely Next.js 15, Ty
 ### 🔍 Fejlett szűrés és keresés
 - **Többkritériumos szűrés**: Szűrés tranzakció típus, kategória és dátumtartomány szerint
 - **Szöveges keresés**: Tranzakciók keresése cím és leírás kulcsszavak alapján
-- **Egyedi kategóriák**: Felhasználó által létrehozott kategóriák dinamikus betöltése
+- **Egyedi kategóriák**: Felhasználó által létrehozott kategóriák dinamikus betöltése teljes CRUD műveletekkel
 - **Tömeges műveletek**: Több tranzakció kiválasztása és egyidejű kezelése
+- **Frissítési funkció**: Kézi frissítés gomb a tranzakció adatok frissítéséhez
 
 ### 📋 Adatkezelés
 - **Oszlop testreszabás**: Táblázat oszlopok megjelenítése/elrejtése felhasználói beállítások alapján
 - **CSV export**: Szűrt vagy kiválasztott tranzakciók exportálása CSV formátumba
 - **Reszponzív dizájn**: Asztali és mobil eszközökre optimalizálva
+- **Mobil elrendezés**: Egymás alá rendezett gomb elrendezés töréssel mobil képernyőkhöz
+- **Érintésbarát felület**: Optimalizált gombok és interakciók mobil eszközökhöz
 
 ## Technológiai Stack
 
@@ -189,8 +198,12 @@ CREATE TABLE custom_subcategories (
 ### Kategóriák
 - `GET /api/categories` - Egyedi kategóriák lekérése
 - `POST /api/categories` - Egyedi kategória hozzáadása
+- `PUT /api/categories` - Kategória nevének frissítése
+- `DELETE /api/categories` - Egyedi kategória törlése
 - `GET /api/subcategories` - Alkategóriák lekérése
 - `POST /api/subcategories` - Alkategória hozzáadása
+- `PUT /api/subcategories` - Alkategória nevének frissítése
+- `DELETE /api/subcategories` - Alkategória törlése
 
 ## Kezdés
 
@@ -299,7 +312,7 @@ npm run dev
    ```
 
 3. **Környezeti változók beállítása**
-   Hozzon létre egy `.env.local` fájlt:
+   Hozzon létre egy `.env.local` fájlt (ha a repo nem tartalmazza):
    ```env
    JWT_SECRET=your-secret-key-change-this-in-production
    DB_HOST=localhost
@@ -308,12 +321,8 @@ npm run dev
    DB_NAME=cost_tracker
    ```
 
-4. **Adatbázis beállítása**
-   ```bash
-   # Adatbázis létrehozása és migrációk futtatása
-   mysql -u your-username -p < database-schema.sql
-   mysql -u your-username -p < database-migration.sql
-   ```
+4. ### **Adatbázis beállítása**
+   A dokumentációban megjelenített SQL kód kimásolása és feltöltése az adatbázisba
 
 5. **Fejlesztői szerver futtatása**
    ```bash

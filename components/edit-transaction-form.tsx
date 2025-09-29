@@ -60,9 +60,9 @@ export function EditTransactionForm({ type, onSuccess }: EditTransactionFormProp
   
   const predefinedExpenseCategories = {
     'Vásárlások': [],
-    'Számlák': ['bérleti díj', 'telefon', 'közlekedés', 'háztartási számlák'],
-    'Hiteltörlesztések': ['Lakás', 'autó', 'tanulmány'],
-    'Szórakozás': ['Éttermek', 'bulik', 'jegyek', 'impulzus vásárlások']
+    'Számlák': ['Bérleti díj', 'Telefon számla', 'Közlekedési számla', 'Háztartási számla'],
+    'Hiteltörlesztések': ['Lakás', 'Autó', 'Tanulmány'],
+    'Szórakozás': ['Étterem', 'Buli', 'Jegy', 'Impulzus vásárlás']
   }
   
   // Custom categories state
@@ -415,7 +415,7 @@ export function EditTransactionForm({ type, onSuccess }: EditTransactionFormProp
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" style={{ display: 'none' }}>
           <IconEdit className="h-4 w-4 mr-0.3" />
           Előző módosítása
         </Button>
