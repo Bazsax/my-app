@@ -21,9 +21,11 @@ A comprehensive personal finance management application built with Next.js 15, T
 - **Editable Categories**: Edit and delete custom categories with pen and trash icons
 - **Category Management**: Add, edit, and delete both categories and subcategories
 - **Transaction Updates**: Automatically update existing transactions when categories are renamed
-- **Inline Editing**: Double-click to edit category and subcategory names directly in the transaction table
+- **Inline Editing**: Double-click to edit category, subcategory, and description directly in the transaction table
 - **Visual Indicators**: Lock icons show predefined (locked) vs custom (unlocked) categories
 - **Mobile-Friendly Editing**: Save/Cancel buttons for mobile devices with touch-friendly interface
+- **Empty Subcategory Creation**: Double-click empty subcategory cells to create new subcategories
+- **Description Editing**: Double-click any description to edit transaction details
 
 ### 📊 Data Visualization
 - **Interactive Charts**: Visual representation of income vs expenses over time
@@ -352,6 +354,8 @@ npm run dev
 ### 3. Managing Transactions
 - **View**: All transactions are displayed in the main table
 - **Edit**: Click the edit icon to modify transaction details
+- **Inline Editing**: Double-click category, subcategory, or description cells to edit directly
+- **Empty Subcategory Creation**: Double-click empty subcategory cells to create new subcategories
 - **Delete**: Click the trash icon to remove a transaction
 - **Bulk Delete**: Select multiple transactions and use the bulk delete button
 

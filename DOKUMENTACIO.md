@@ -21,9 +21,11 @@ Egy átfogó személyes pénzügyi menedzsment alkalmazás, amely Next.js 15, Ty
 - **Szerkeszthető kategóriák**: Egyedi kategóriák szerkesztése és törlése toll és kuka ikonokkal
 - **Kategória kezelés**: Kategóriák és alkategóriák hozzáadása, szerkesztése és törlése
 - **Tranzakció frissítések**: Meglévő tranzakciók automatikus frissítése kategória átnevezéskor
-- **Beépített szerkesztés**: Dupla kattintással szerkeszthető kategória- és alkategórianév közvetlenül a tranzakció táblázatban
+- **Beépített szerkesztés**: Dupla kattintással szerkeszthető kategória-, alkategória- és leírás közvetlenül a tranzakció táblázatban
 - **Vizuális jelzők**: Zár ikonok mutatják az előre definiált (zárt) és egyedi (nyitott) kategóriákat
 - **Mobilbarát szerkesztés**: Mentés/Mégse gombok mobil eszközökhöz érintésbarát felülettel
+- **Üres alkategória létrehozás**: Dupla kattintás üres alkategória cellákra új alkategóriák létrehozásához
+- **Leírás szerkesztés**: Dupla kattintás bármely leírásra a tranzakció részletek szerkesztéséhez
 
 ### 📊 Adatvizualizáció
 - **Interaktív diagramok**: Bevétel vs kiadás vizuális ábrázolása időben
@@ -352,6 +354,8 @@ npm run dev
 ### 3. Tranzakciók Kezelése
 - **Megtekintés**: Minden tranzakció a fő táblázatban jelenik meg
 - **Szerkesztés**: Kattintson a szerkesztés ikonra a tranzakció részletek módosításához
+- **Beépített szerkesztés**: Dupla kattintás kategória-, alkategória- vagy leírás cellákra közvetlen szerkesztéshez
+- **Üres alkategória létrehozás**: Dupla kattintás üres alkategória cellákra új alkategóriák létrehozásához
 - **Törlés**: Kattintson a kuka ikonra a tranzakció eltávolításához
 - **Tömeges törlés**: Válasszon ki több tranzakciót és használja a tömeges törlés gombot
 
