@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { DateRange } from "react-day-picker"
 import { format } from "date-fns"
 import { hu } from "date-fns/locale"
-import { IconEdit, IconTrash, IconColumns, IconFilter, IconDownload, IconSearch, IconRefresh, IconLock, IconLockOpen } from "@tabler/icons-react"
+import { IconEdit, IconTrash, IconColumns, IconFilter, IconDownload, IconSearch, IconRefresh, IconLock } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -112,6 +112,10 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
   const [editCategoryValue, setEditCategoryValue] = useState("")
   const [editingSubcategory, setEditingSubcategory] = useState<{transactionId: number, subcategory: string} | null>(null)
   const [editSubcategoryValue, setEditSubcategoryValue] = useState("")
+  const [editingEmptySubcategory, setEditingEmptySubcategory] = useState<{transactionId: number, category: string} | null>(null)
+  const [editEmptySubcategoryValue, setEditEmptySubcategoryValue] = useState("")
+  const [editingDescription, setEditingDescription] = useState<{transactionId: number, description: string} | null>(null)
+  const [editDescriptionValue, setEditDescriptionValue] = useState("")
   
   const [selectAllChecked, setSelectAllChecked] = useState(false)
   
@@ -512,9 +516,7 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
                     }`}
                     title={isCustomCategory ? "Dupla kattintás a szerkesztéshez" : "Előre definiált kategória - nem szerkeszthető"}
                   >
-                    {isCustomCategory ? (
-                      <IconLockOpen className="h-3 w-3 text-muted-foreground" />
-                    ) : (
+                    {!isCustomCategory && (
                       <IconLock className="h-3 w-3 text-muted-foreground" />
                     )}
                     {transaction.category || '-'}
@@ -526,6 +528,7 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
         )
       case 'subcategory':
         const isEditingSubcategory = editingSubcategory?.transactionId === transaction.id
+        const isEditingEmptySubcategory = editingEmptySubcategory?.transactionId === transaction.id
         return (
           <TableCell key={columnKey}>
             {isEditingSubcategory ? (
@@ -557,6 +560,36 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
                   </Button>
                 </div>
               </div>
+            ) : isEditingEmptySubcategory ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editEmptySubcategoryValue}
+                  onChange={(e) => setEditEmptySubcategoryValue(e.target.value)}
+                  onKeyDown={handleEmptySubcategoryKeyPress}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                  autoFocus
+                  placeholder="Új alkategória neve"
+                />
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleEmptySubcategorySave}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Hozzáadás
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleEmptySubcategoryCancel}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Mégse
+                  </Button>
+                </div>
+              </div>
             ) : (
               (() => {
                 const isCustomSubcategory = transaction.subcategory && 
@@ -565,17 +598,27 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
                 
                 return (
                   <span
-                    onDoubleClick={() => handleSubcategoryDoubleClick(transaction.id, transaction.subcategory || '')}
+                    onDoubleClick={() => {
+                      if (transaction.subcategory) {
+                        handleSubcategoryDoubleClick(transaction.id, transaction.subcategory)
+                      } else {
+                        handleEmptySubcategoryDoubleClick(transaction.id, transaction.category || '')
+                      }
+                    }}
                     className={`px-2 py-1 rounded flex items-center gap-1 ${
-                      isCustomSubcategory 
+                      isCustomSubcategory || !transaction.subcategory
                         ? 'cursor-pointer hover:bg-muted' 
                         : 'cursor-default'
                     }`}
-                    title={isCustomSubcategory ? "Dupla kattintás a szerkesztéshez" : "Előre definiált alkategória - nem szerkeszthető"}
+                    title={
+                      !transaction.subcategory 
+                        ? "Dupla kattintás új alkategória hozzáadásához"
+                        : isCustomSubcategory 
+                          ? "Dupla kattintás a szerkesztéshez" 
+                          : "Előre definiált alkategória - nem szerkeszthető"
+                    }
                   >
-                    {isCustomSubcategory ? (
-                      <IconLockOpen className="h-3 w-3 text-muted-foreground" />
-                    ) : (
+                    {!isCustomSubcategory && transaction.subcategory && (
                       <IconLock className="h-3 w-3 text-muted-foreground" />
                     )}
                     {transaction.subcategory || '-'}
@@ -586,9 +629,48 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
           </TableCell>
         )
       case 'description':
+        const isEditingDescription = editingDescription?.transactionId === transaction.id
         return (
           <TableCell key={columnKey}>
-            {transaction.description || '-'}
+            {isEditingDescription ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editDescriptionValue}
+                  onChange={(e) => setEditDescriptionValue(e.target.value)}
+                  onKeyDown={handleDescriptionKeyPress}
+                  className="w-full px-2 py-1 border rounded text-sm"
+                  autoFocus
+                  placeholder="Leírás"
+                />
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDescriptionSave}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Mentés
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDescriptionCancel}
+                    className="text-xs px-2 py-1 h-6"
+                  >
+                    Mégse
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <span
+                onDoubleClick={() => handleDescriptionDoubleClick(transaction.id, transaction.description || '')}
+                className="cursor-pointer hover:bg-muted px-2 py-1 rounded"
+                title="Dupla kattintás a szerkesztéshez"
+              >
+                {transaction.description || '-'}
+              </span>
+            )}
           </TableCell>
         )
       case 'actions':
@@ -893,6 +975,203 @@ export function TransactionTable({ dateRange, refreshKey, onRefresh }: Transacti
     } else if (e.key === 'Escape') {
       console.log('Escape key pressed, calling handleSubcategoryCancel')
       handleSubcategoryCancel()
+    }
+  }
+
+  // Empty subcategory editing handlers
+  const handleEmptySubcategoryDoubleClick = (transactionId: number, category: string) => {
+    setEditingEmptySubcategory({ transactionId, category })
+    setEditEmptySubcategoryValue("")
+  }
+
+  const handleEmptySubcategorySave = async () => {
+    console.log('handleEmptySubcategorySave called', { editingEmptySubcategory, editEmptySubcategoryValue })
+    if (!editingEmptySubcategory || !editEmptySubcategoryValue.trim()) {
+      console.log('Early return: no editingEmptySubcategory or empty value')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        console.log('No token found')
+        return
+      }
+
+      // Get the current transaction data
+      const currentTransaction = transactions.find(t => t.id === editingEmptySubcategory.transactionId)
+      if (!currentTransaction) {
+        console.log('Current transaction not found')
+        return
+      }
+
+      // First, add the subcategory to the database
+      console.log('Making API call to add subcategory to database')
+      const subcategoryResponse = await fetch('/api/subcategories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          categoryName: editingEmptySubcategory.category,
+          subcategoryName: editEmptySubcategoryValue.trim(),
+          type: currentTransaction.type
+        })
+      })
+
+      if (!subcategoryResponse.ok) {
+        const errorText = await subcategoryResponse.text()
+        console.log('Subcategory API error response:', errorText)
+        toast.error('Nem sikerült az alkategória hozzáadása')
+        return
+      }
+
+      // Then update the transaction
+      console.log('Making API call to update transaction')
+      const transactionResponse = await fetch(`/api/transactions/${editingEmptySubcategory.transactionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: currentTransaction.title,
+          amount: currentTransaction.amount,
+          description: currentTransaction.description,
+          category: currentTransaction.category,
+          subcategory: editEmptySubcategoryValue.trim(),
+          type: currentTransaction.type,
+          transactionType: currentTransaction.transaction_type,
+          date: currentTransaction.date,
+          time: currentTransaction.time
+        })
+      })
+
+      console.log('Transaction API response:', transactionResponse.status, transactionResponse.ok)
+      if (transactionResponse.ok) {
+        // Update local state
+        setTransactions(prev => prev.map(t => 
+          t.id === editingEmptySubcategory.transactionId 
+            ? { ...t, subcategory: editEmptySubcategoryValue.trim() }
+            : t
+        ))
+        
+        setEditingEmptySubcategory(null)
+        setEditEmptySubcategoryValue("")
+        toast.success('Alkategória hozzáadva')
+      } else {
+        const errorText = await transactionResponse.text()
+        console.log('Transaction API error response:', errorText)
+        toast.error('Nem sikerült a tranzakció frissítése')
+      }
+    } catch (error) {
+      console.error('Error adding subcategory:', error)
+      toast.error('Hiba történt az alkategória hozzáadása során')
+    }
+  }
+
+  const handleEmptySubcategoryCancel = () => {
+    setEditingEmptySubcategory(null)
+    setEditEmptySubcategoryValue("")
+  }
+
+  const handleEmptySubcategoryKeyPress = (e: React.KeyboardEvent) => {
+    console.log('Empty subcategory key pressed:', e.key)
+    if (e.key === 'Enter') {
+      console.log('Enter key pressed, calling handleEmptySubcategorySave')
+      e.preventDefault()
+      handleEmptySubcategorySave()
+    } else if (e.key === 'Escape') {
+      console.log('Escape key pressed, calling handleEmptySubcategoryCancel')
+      handleEmptySubcategoryCancel()
+    }
+  }
+
+  // Description editing handlers
+  const handleDescriptionDoubleClick = (transactionId: number, currentDescription: string) => {
+    setEditingDescription({ transactionId, description: currentDescription })
+    setEditDescriptionValue(currentDescription)
+  }
+
+  const handleDescriptionSave = async () => {
+    console.log('handleDescriptionSave called', { editingDescription, editDescriptionValue })
+    if (!editingDescription) {
+      console.log('Early return: no editingDescription')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
+        console.log('No token found')
+        return
+      }
+
+      // Get the current transaction data
+      const currentTransaction = transactions.find(t => t.id === editingDescription.transactionId)
+      if (!currentTransaction) {
+        console.log('Current transaction not found')
+        return
+      }
+
+      console.log('Making API call to update transaction description')
+      const response = await fetch(`/api/transactions/${editingDescription.transactionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: currentTransaction.title,
+          amount: currentTransaction.amount,
+          description: editDescriptionValue.trim(),
+          category: currentTransaction.category,
+          subcategory: currentTransaction.subcategory,
+          type: currentTransaction.type,
+          transactionType: currentTransaction.transaction_type,
+          date: currentTransaction.date,
+          time: currentTransaction.time
+        })
+      })
+
+      console.log('API response:', response.status, response.ok)
+      if (response.ok) {
+        // Update local state
+        setTransactions(prev => prev.map(t => 
+          t.id === editingDescription.transactionId 
+            ? { ...t, description: editDescriptionValue.trim() }
+            : t
+        ))
+        
+        setEditingDescription(null)
+        setEditDescriptionValue("")
+        toast.success('Leírás frissítve')
+      } else {
+        const errorText = await response.text()
+        console.log('API error response:', errorText)
+        toast.error('Nem sikerült a leírás frissítése')
+      }
+    } catch (error) {
+      console.error('Error updating description:', error)
+      toast.error('Hiba történt a leírás frissítése során')
+    }
+  }
+
+  const handleDescriptionCancel = () => {
+    setEditingDescription(null)
+    setEditDescriptionValue("")
+  }
+
+  const handleDescriptionKeyPress = (e: React.KeyboardEvent) => {
+    console.log('Description key pressed:', e.key)
+    if (e.key === 'Enter') {
+      console.log('Enter key pressed, calling handleDescriptionSave')
+      e.preventDefault()
+      handleDescriptionSave()
+    } else if (e.key === 'Escape') {
+      console.log('Escape key pressed, calling handleDescriptionCancel')
+      handleDescriptionCancel()
     }
   }
 

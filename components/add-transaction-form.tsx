@@ -97,7 +97,6 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
     description: "",
     category: type === 'expense' ? 'Vásárlások' : 'Fizetés',
     subcategory: "",
-    customPurchase: "",
     transactionType: "one-time" as "one-time" | "recurring" | "timeline",
     startDate: "",
     endDate: "",
@@ -488,8 +487,7 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
           frequency: formData.frequency,
           startDate: formData.startDate,
           endDate: formData.endDate,
-          // For expenses, if category is Vásárlások, use customPurchase as the category
-          category: type === 'expense' && formData.category === 'Vásárlások' ? formData.customPurchase : formData.category,
+          category: formData.category,
           subcategory: formData.subcategory
         }),
       })
@@ -504,7 +502,6 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
           description: "",
           category: type === 'expense' ? 'Vásárlások' : 'Fizetés',
           subcategory: "",
-          customPurchase: "",
           transactionType: "one-time",
           startDate: "",
           endDate: "",
@@ -662,7 +659,6 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
                   ...prev, 
                   category: value,
                   subcategory: "",
-                  customPurchase: ""
                 }))
               }}
             >
@@ -942,20 +938,6 @@ export function AddTransactionForm({ type, onSuccess }: AddTransactionFormProps)
             </div>
           )}
 
-          {/* Custom purchase input for Vásárlások category */}
-          {type === 'expense' && formData.category === 'Vásárlások' && (
-            <div>
-              <Label htmlFor="customPurchase">Mit vásárolt?</Label>
-              <Input
-                id="customPurchase"
-                name="customPurchase"
-                type="text"
-                value={formData.customPurchase}
-                onChange={handleChange}
-                placeholder="pl. Laptop, Élelmiszer, stb."
-              />
-            </div>
-          )}
 
           <div>
             <Label htmlFor="time">Időpont (opcionális)</Label>
